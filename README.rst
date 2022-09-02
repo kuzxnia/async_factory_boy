@@ -1,4 +1,4 @@
-asyns_factory_boy
+async_factory_boy
 =================
 
 `factory_boy <https://github.com/FactoryBoy/factory_boy>`__ extension
