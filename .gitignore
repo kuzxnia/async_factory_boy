@@ -33,3 +33,5 @@ archive.zip
 sentry/data
 /data
 docs/_build
+/build
+*.egg-info/
