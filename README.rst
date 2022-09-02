@@ -2,7 +2,7 @@
 [factory_boy](https://github.com/FactoryBoy/factory_boy) extension with asynchronous ORM support
 
 ## Requirements
-* python 
+* python (3.6, 3.7, 3.8, 3.9)
 
 ## Instalation
 
@@ -11,8 +11,8 @@ Install using `pip`
 pip install async_factory_boy
 ```
 
-## Example
-async_factory_boy integrate with Object Relational Mapping (ORM) through subclass of 'factory.Factory'. All supported are listed below.
+## Usage 
+async_factory_boy integrate with Object Relational Mapping (ORM) through subclass of `factory.Factory`. All supported are listed below.
 
 * SQLAlchemy, with `async_factory_boy.factory.sqlalchemy.AsyncSQLAlchemyFactory`
 
@@ -20,9 +20,9 @@ async_factory_boy integrate with Object Relational Mapping (ORM) through subclas
 from async_factory_boy.factory.sqlalchemy import AsyncSQLAlchemyFactory
 
 
-class UserFactory(AsyncFactory):
+class TestModelFactory(AsyncFactory):
     class Meta:
-        model = User
+        model = TestModel
         session = session
 
     name = Faker("name")
@@ -37,9 +37,9 @@ class UserFactory(AsyncFactory):
 from async_factory_boy.factory.tortoise import AsyncTortoiseFactory
 
 
-class UserFactory(AsyncTortoiseFactory):
+class TestModelFactory(AsyncTortoiseFactory):
     class Meta:
-        model = User
+        model = TestModel
 
     name = Faker("name")
     created_at = Faker("date_time")
@@ -48,8 +48,9 @@ class UserFactory(AsyncTortoiseFactory):
 and factory usage
 
 ```python
-user = await UserFactory.create()
-user = await UserFactory.build()
+test = await TestModelFactory.create()
+test = await TestModelFactory.build()
 ```
 
-##### for test configuration examples check `tests/` directory
+
+#### For test configuration examples check `tests/` directory.
