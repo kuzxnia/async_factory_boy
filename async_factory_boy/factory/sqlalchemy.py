@@ -1,8 +1,8 @@
 import asyncio
 import inspect
-from factory import Factory, FactoryError
 
-from factory.alchemy import SESSION_PERSISTENCE_COMMIT, SESSION_PERSISTENCE_FLUSH, SQLAlchemyModelFactory, SQLAlchemyOptions
+from factory import Factory, FactoryError
+from factory.alchemy import SQLAlchemyOptions
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, NoResultFound
 

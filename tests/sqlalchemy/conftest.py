@@ -15,7 +15,6 @@ async_session  = sessionmaker(
     autocommit=False,
     autoflush=False,
 )
-# global session instance for factory-boy
 sc_session = scoped_session(async_session)
 
 
@@ -32,25 +31,8 @@ async def db_session() -> AsyncSession:
     async with engine.begin() as connection:
         await connection.run_sync(models.Base.metadata.drop_all)
         await connection.run_sync(models.Base.metadata.create_all)
-        # operation in progress
-        # await connection.begin_nested()
-
-        # if sc_session.registry.has():
-        #     await sc_session.registry().close()
-
-        # sc_session.registry.clear()
-        # sc_session.configure(bind=connection)
 
         async with async_session(bind=connection) as session:
             yield session
             await session.flush()
             await session.rollback()
-
-
-# @pytest_asyncio.fixture(autouse=True)
-# async def clean_session(db_session):
-#     for table in reversed(models.Base.metadata.sorted_tables):
-#         await db_session.execute(table.delete())
-#     await db_session.commit()
-
-#     return db_session

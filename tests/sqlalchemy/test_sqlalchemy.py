@@ -1,13 +1,19 @@
-import pytest
 import factory
+import pytest
 import sqlalchemy
 from factory import FactoryError, Iterator
 
-from unittest import mock
 from async_factory_boy.factory.sqlalchemy import AsyncSQLAlchemyFactory
-from tests.sqlalchemy.factory import MultifieldModelFactory, NoSessionFactory, NonIntegerPkFactory, StandardFactory, WithGetOrCreateFieldFactory, WithMultipleGetOrCreateFieldsFactory
-from tests.sqlalchemy.models import MultiFieldModel, SpecialFieldModel, StandardModel
 from tests.sqlalchemy.conftest import sc_session
+from tests.sqlalchemy.factory import (
+    MultifieldModelFactory,
+    NonIntegerPkFactory,
+    NoSessionFactory,
+    StandardFactory,
+    WithGetOrCreateFieldFactory,
+    WithMultipleGetOrCreateFieldsFactory,
+)
+from tests.sqlalchemy.models import MultiFieldModel, SpecialFieldModel
 
 
 class TestSQLAlchemyPkSequence:
