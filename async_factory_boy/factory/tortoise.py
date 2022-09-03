@@ -25,6 +25,10 @@ class AsyncTortoiseFactory(factory.Factory):
         return await model_class.create(*args, **kwargs)
 
     @classmethod
+    async def create_batch(cls, size, **kwargs):
+        return [await cls.create(**kwargs) for _ in range(size)]
+
+    @classmethod
     async def _build(cls, model_class, *args, **kwargs):
         """Actually build an instance of the model_class.
 
@@ -43,10 +47,6 @@ class AsyncTortoiseFactory(factory.Factory):
                 await instance.save()
                 kwargs[key] = instance
         return model_class(*args, **kwargs)
-
-    @classmethod
-    async def create_batch(cls, size, **kwargs):
-        return [await cls.create(**kwargs) for _ in range(size)]
 
 
 class AsyncStepBuilder(StepBuilder):

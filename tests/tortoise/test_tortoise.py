@@ -1,20 +1,10 @@
 import factory
 import pytest
-import sqlalchemy
-from factory import FactoryError, Iterator
 
-from async_factory_boy.factory.sqlalchemy import AsyncSQLAlchemyFactory
+from async_factory_boy.factory.tortoise import AsyncTortoiseFactory
 
-from .conftest import sc_session
-from .factory import (
-    MultifieldModelFactory,
-    NonIntegerPkFactory,
-    NoSessionFactory,
-    StandardFactory,
-    WithGetOrCreateFieldFactory,
-    WithMultipleGetOrCreateFieldsFactory,
-)
-from .models import MultiFieldModel, SpecialFieldModel
+from .factory import NonIntegerPkFactory, NoSessionFactory, StandardFactory
+from .models import SpecialFieldModel
 
 
 class TestSQLAlchemyPkSequence:
@@ -23,12 +13,12 @@ class TestSQLAlchemyPkSequence:
         StandardFactory.reset_sequence(1)
 
     async def test_pk_first(self):
-        std = StandardFactory.build()
+        std = await StandardFactory.build()
         assert 'foo1' == std.foo
 
     async def test_pk_many(self):
-        std1 = StandardFactory.build()
-        std2 = StandardFactory.build()
+        std1 = await StandardFactory.build()
+        std2 = await StandardFactory.build()
         assert 'foo1' == std1.foo
         assert 'foo2' == std2.foo
 
@@ -53,45 +43,6 @@ class TestSQLAlchemyPkSequence:
         assert 0 == std2.id
 
 
-class TestSQLAlchemyGetOrCreate:
-    async def test_simple_call(self):
-        obj1 = await WithGetOrCreateFieldFactory(foo='foo1')
-        obj2 = await WithGetOrCreateFieldFactory(foo='foo1')
-        assert obj1 == obj2
-
-    async def test_missing_arg(self):
-        with pytest.raises(FactoryError):
-            await MultifieldModelFactory()
-
-    async def test_multicall(self, db_session):
-        objs = await MultifieldModelFactory.create_batch(
-            6,
-            slug=Iterator(['main', 'alt']),
-        )
-        assert 6 == len(objs)
-        assert 2 == len(set(objs))
-
-        result = (await db_session.execute(sqlalchemy.select(MultiFieldModel.slug).order_by(MultiFieldModel.slug))).scalars().all()
-        assert list(result) == ["alt", "main"]
-
-
-class TestMultipleGetOrCreateFields:
-    async def test_one_defined(self):
-        obj1 = await WithMultipleGetOrCreateFieldsFactory()
-        obj2 = await WithMultipleGetOrCreateFieldsFactory(slug=obj1.slug)
-        assert obj1 == obj2
-
-    async def test_both_defined(self):
-        obj1 = await WithMultipleGetOrCreateFieldsFactory()
-        with pytest.raises(sqlalchemy.exc.IntegrityError):
-            await WithMultipleGetOrCreateFieldsFactory(slug=obj1.slug, text="alt")
-
-    async def test_unique_field_not_in_get_or_create(self):
-        await WithMultipleGetOrCreateFieldsFactory(title='Title')
-        with pytest.raises(sqlalchemy.exc.IntegrityError):
-            await WithMultipleGetOrCreateFieldsFactory(title='Title')
-
-
 class TestSQLAlchemyNonIntegerPk:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -99,12 +50,12 @@ class TestSQLAlchemyNonIntegerPk:
         NonIntegerPkFactory.reset_sequence()
 
     async def test_first(self):
-        nonint = NonIntegerPkFactory.build()
+        nonint = await NonIntegerPkFactory.build()
         assert 'foo0' == nonint.id
 
     async def test_many(self):
-        nonint1 = NonIntegerPkFactory.build()
-        nonint2 = NonIntegerPkFactory.build()
+        nonint1 = await NonIntegerPkFactory.build()
+        nonint2 = await NonIntegerPkFactory.build()
 
         assert 'foo0' == nonint1.id
         assert 'foo1' == nonint2.id
@@ -114,7 +65,7 @@ class TestSQLAlchemyNonIntegerPk:
         assert 'foo0' == nonint1.id
 
         NonIntegerPkFactory.reset_sequence()
-        nonint2 = NonIntegerPkFactory.build()
+        nonint2 = await NonIntegerPkFactory.build()
         assert 'foo0' == nonint2.id
 
     async def test_force_pk(self):
@@ -130,8 +81,8 @@ class TestSQLAlchemyNoSession:
     async def test_build_does_not_raises_exception_when_no_session_was_set(self):
         NoSessionFactory.reset_sequence()  # Make sure we start at test ID 0
 
-        inst0 = NoSessionFactory.build()
-        inst1 = NoSessionFactory.build()
+        inst0 = await NoSessionFactory.build()
+        inst1 = await NoSessionFactory.build()
         assert inst0.id == 0
         assert inst1.id == 1
 
@@ -141,10 +92,9 @@ class TestNameConflict:
     See #775.
     """
     async def test_no_name_conflict_on_save(self):
-        class SpecialFieldWithSaveFactory(AsyncSQLAlchemyFactory):
+        class SpecialFieldWithSaveFactory(AsyncTortoiseFactory):
             class Meta:
                 model = SpecialFieldModel
-                sqlalchemy_session = sc_session
 
             id = factory.Sequence(lambda n: n)
             session = ''
@@ -153,11 +103,9 @@ class TestNameConflict:
         assert saved_child.session == ""
 
     async def test_no_name_conflict_on_get_or_create(self):
-        class SpecialFieldWithGetOrCreateFactory(AsyncSQLAlchemyFactory):
+        class SpecialFieldWithGetOrCreateFactory(AsyncTortoiseFactory):
             class Meta:
                 model = SpecialFieldModel
-                sqlalchemy_get_or_create = ('session',)
-                sqlalchemy_session = sc_session
 
             id = factory.Sequence(lambda n: n)
             session = ''
