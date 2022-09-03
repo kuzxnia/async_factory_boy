@@ -1,0 +1,40 @@
+default_language_version:
+  # default language version for each language used in the repository
+  python: python3.9
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+      - id: check-merge-conflict
+      - id: trailing-whitespace
+      - id: check-yaml
+
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.4
+    hooks:
+      - id: flake8
+
+  - repo: https://github.com/psf/black
+    rev: 20.8b1
+    hooks:
+      - id: black
+  - repo: https://github.com/myint/autoflake
+    rev: v1.5.1
+    hooks:
+    -   id: autoflake
+        name: autoflake
+        args: ["--in-place", "--remove-unused-variables", "--remove-all-unused-imports"]
+        language: python
+        files: \.py$
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.7.0
+    hooks:
+      - id: isort
+
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.6.2
+    hooks:
+      - id: bandit
+        exclude: ^tests/
