@@ -7,7 +7,7 @@ with asynchronous ORM support
 Requirements
 ------------
 
--  python (3.6, 3.7, 3.8, 3.9)
+-  python (3.8, 3.9, 3.10)
 
 Instalation
 -----------
