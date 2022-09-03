@@ -32,7 +32,7 @@ subclass of ``factory.Factory``. All supported are listed below.
    from async_factory_boy.factory.sqlalchemy import AsyncSQLAlchemyFactory
 
 
-   class TestModelFactory(AsyncFactory):
+   class TestModelFactory(AsyncSQLAlchemyFactory):
        class Meta:
            model = TestModel
            session = session
