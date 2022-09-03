@@ -35,3 +35,6 @@ sentry/data
 docs/_build
 /build
 *.egg-info/
+test.db-shm
+test.db-wal
+.tox/
