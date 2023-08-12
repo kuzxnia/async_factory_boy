@@ -2,4 +2,4 @@
 
 from setuptools import setup
 
-setup()
+setup(packages=["async_factory_boy", "async_factory_boy.factory"])
