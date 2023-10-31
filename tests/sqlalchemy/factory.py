@@ -15,6 +15,16 @@ class StandardFactory(AsyncSQLAlchemyFactory):
     foo = factory.Sequence(lambda n: "foo%d" % n)
 
 
+class SessionGetterFactory(AsyncSQLAlchemyFactory):
+    class Meta:
+        model = models.StandardModel
+        sqlalchemy_session = None
+        sqlalchemy_session_factory = lambda: sc_session
+
+    id = factory.Sequence(lambda n: n)
+    foo = factory.Sequence(lambda n: "foo%d" % n)
+
+
 class NonIntegerPkFactory(AsyncSQLAlchemyFactory):
     class Meta:
         model = models.NonIntegerPk

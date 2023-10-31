@@ -19,6 +19,9 @@ class AsyncSQLAlchemyFactory(Factory):
 
     @classmethod
     async def create(cls, **kwargs):
+        session_factory = cls._meta.sqlalchemy_session_factory
+        if session_factory:
+            cls._meta.sqlalchemy_session = session_factory()
         session = cls._meta.sqlalchemy_session
 
         instance = await super().create(**kwargs)
@@ -28,8 +31,6 @@ class AsyncSQLAlchemyFactory(Factory):
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
-        session = cls._meta.sqlalchemy_session
-
         async def maker_coroutine():
             for key, value in kwargs.items():
                 # when using SubFactory, you'll have a Task in the corresponding kwarg
