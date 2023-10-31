@@ -13,6 +13,7 @@ from .factory import (
     StandardFactory,
     WithGetOrCreateFieldFactory,
     WithMultipleGetOrCreateFieldsFactory,
+    SessionGetterFactory,
 )
 from .models import MultiFieldModel, SpecialFieldModel
 
@@ -71,7 +72,8 @@ class TestSQLAlchemyGetOrCreate:
         assert 6 == len(objs)
         assert 2 == len(set(objs))
 
-        result = (await db_session.execute(sqlalchemy.select(MultiFieldModel.slug).order_by(MultiFieldModel.slug))).scalars().all()
+        result = (await db_session.execute(
+            sqlalchemy.select(MultiFieldModel.slug).order_by(MultiFieldModel.slug))).scalars().all()
         assert list(result) == ["alt", "main"]
 
 
@@ -140,6 +142,7 @@ class TestNameConflict:
     """Regression test for `TypeError: _save() got multiple values for argument 'session'`
     See #775.
     """
+
     async def test_no_name_conflict_on_save(self):
         class SpecialFieldWithSaveFactory(AsyncSQLAlchemyFactory):
             class Meta:
@@ -164,3 +167,29 @@ class TestNameConflict:
 
         get_or_created_child = await SpecialFieldWithGetOrCreateFactory()
         assert get_or_created_child.session == ""
+
+
+class TestSQLAlchemyWithSessionGetterPkSequence:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        SessionGetterFactory.reset_sequence(1)
+
+    async def test_pk_creation(self):
+        std1 = await SessionGetterFactory.create()
+        assert 'foo1' == std1.foo
+        assert 1 == std1.id
+
+        SessionGetterFactory.reset_sequence()
+        std2 = await SessionGetterFactory.create()
+        assert 'foo0' == std2.foo
+        assert 0 == std2.id
+
+    async def test_pk_force_value(self):
+        std1 = await SessionGetterFactory.create(id=10)
+        assert 'foo1' == std1.foo  # sequence and pk are unrelated
+        assert 10 == std1.id
+
+        SessionGetterFactory.reset_sequence()
+        std2 = await SessionGetterFactory.create()
+        assert 'foo0' == std2.foo  # Sequence doesn't care about pk
+        assert 0 == std2.id
