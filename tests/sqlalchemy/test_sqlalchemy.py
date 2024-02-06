@@ -4,9 +4,9 @@ import sqlalchemy
 from factory import FactoryError, Iterator
 
 from async_factory_boy.factory.sqlalchemy import AsyncSQLAlchemyFactory
-
 from .conftest import sc_session
 from .factory import (
+    ChildModelWithSelfAttributeFactory,
     MultifieldModelFactory,
     NonIntegerPkFactory,
     NoSessionFactory,
@@ -23,12 +23,12 @@ class TestSQLAlchemyPkSequence:
         StandardFactory.reset_sequence(1)
 
     async def test_pk_first(self):
-        std = StandardFactory.build()
+        std = await StandardFactory.build()
         assert 'foo1' == std.foo
 
     async def test_pk_many(self):
-        std1 = StandardFactory.build()
-        std2 = StandardFactory.build()
+        std1 = await StandardFactory.build()
+        std2 = await StandardFactory.build()
         assert 'foo1' == std1.foo
         assert 'foo2' == std2.foo
 
@@ -71,7 +71,9 @@ class TestSQLAlchemyGetOrCreate:
         assert 6 == len(objs)
         assert 2 == len(set(objs))
 
-        result = (await db_session.execute(sqlalchemy.select(MultiFieldModel.slug).order_by(MultiFieldModel.slug))).scalars().all()
+        result = (
+            await db_session.execute(sqlalchemy.select(MultiFieldModel.slug).order_by(
+                MultiFieldModel.slug))).scalars().all()
         assert list(result) == ["alt", "main"]
 
 
@@ -99,12 +101,12 @@ class TestSQLAlchemyNonIntegerPk:
         NonIntegerPkFactory.reset_sequence()
 
     async def test_first(self):
-        nonint = NonIntegerPkFactory.build()
+        nonint = await NonIntegerPkFactory.build()
         assert 'foo0' == nonint.id
 
     async def test_many(self):
-        nonint1 = NonIntegerPkFactory.build()
-        nonint2 = NonIntegerPkFactory.build()
+        nonint1 = await NonIntegerPkFactory.build()
+        nonint2 = await NonIntegerPkFactory.build()
 
         assert 'foo0' == nonint1.id
         assert 'foo1' == nonint2.id
@@ -114,7 +116,7 @@ class TestSQLAlchemyNonIntegerPk:
         assert 'foo0' == nonint1.id
 
         NonIntegerPkFactory.reset_sequence()
-        nonint2 = NonIntegerPkFactory.build()
+        nonint2 = await NonIntegerPkFactory.build()
         assert 'foo0' == nonint2.id
 
     async def test_force_pk(self):
@@ -130,8 +132,8 @@ class TestSQLAlchemyNoSession:
     async def test_build_does_not_raises_exception_when_no_session_was_set(self):
         NoSessionFactory.reset_sequence()  # Make sure we start at test ID 0
 
-        inst0 = NoSessionFactory.build()
-        inst1 = NoSessionFactory.build()
+        inst0 = await NoSessionFactory.build()
+        inst1 = await NoSessionFactory.build()
         assert inst0.id == 0
         assert inst1.id == 1
 
@@ -140,6 +142,7 @@ class TestNameConflict:
     """Regression test for `TypeError: _save() got multiple values for argument 'session'`
     See #775.
     """
+
     async def test_no_name_conflict_on_save(self):
         class SpecialFieldWithSaveFactory(AsyncSQLAlchemyFactory):
             class Meta:
@@ -164,3 +167,15 @@ class TestNameConflict:
 
         get_or_created_child = await SpecialFieldWithGetOrCreateFactory()
         assert get_or_created_child.session == ""
+
+
+class TestChildModelWithSelfAttributeFactory:
+    async def test_subfactory(self):
+        child = await ChildModelWithSelfAttributeFactory.create()
+
+        assert child.id is not None
+        assert child.name is not None
+        assert child.parent_id is not None
+        assert child.parent is not None
+        assert child.parent.id is not None
+        assert child.parent.name is not None
