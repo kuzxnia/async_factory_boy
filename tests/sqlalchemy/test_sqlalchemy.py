@@ -72,8 +72,12 @@ class TestSQLAlchemyGetOrCreate:
         assert 2 == len(set(objs))
 
         result = (
-            await db_session.execute(sqlalchemy.select(MultiFieldModel.slug).order_by(
-                MultiFieldModel.slug))).scalars().all()
+            await db_session.execute(
+                sqlalchemy
+                .select(MultiFieldModel.slug)
+                .order_by(MultiFieldModel.slug)
+            )
+        ).scalars().all()
         assert list(result) == ["alt", "main"]
 
 
