@@ -175,9 +175,10 @@ class AsyncSQLAlchemyFactory(Factory):
                 if get_or_create_params:
                     try:
                         obj = (
-                            await session.execute(select(model_class).filter_by(**get_or_create_params))).scalars(
-
-                        ).one()
+                            await session
+                            .execute(select(model_class)
+                            .filter_by(**get_or_create_params))
+                        ).scalars().one()
                     except NoResultFound:
                         # Original params are not a valid lookup and triggered a create(),
                         # that resulted in an IntegrityError.
