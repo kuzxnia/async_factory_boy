@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 from inspect import isawaitable
-from typing import Any
+from typing import Any, Optional
 
 from factory import errors, Factory, FactoryError
 from factory.alchemy import SQLAlchemyOptions
@@ -36,7 +36,7 @@ class AsyncBuildStep(BuildStep):
 class AsyncStepBuilder(StepBuilder):
     async def build(
         self,
-        parent_step: AsyncBuildStep | None = None,  # type: ignore[override]
+        parent_step: Optional[AsyncBuildStep] = None,  # type: ignore[override]
         force_sequence: Any = None,
     ) -> Any:
         """Build a factory instance."""
