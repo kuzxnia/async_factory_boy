@@ -1,21 +1,118 @@
 import asyncio
 import inspect
+from inspect import isawaitable
+from typing import Any, Optional
 
-from factory import Factory, FactoryError
+from factory import errors, Factory, FactoryError
 from factory.alchemy import SQLAlchemyOptions
+from factory.builder import (BuildStep, DeclarationSet, parse_declarations, Resolver, StepBuilder)
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, NoResultFound
+
+
+class AsyncResolver(Resolver):
+    async def async_get(self, name: str) -> Any:
+        """Get a value from the stub, resolving async values."""
+        value = getattr(self, name)
+        if isawaitable(value):
+            value = await value
+            self._Resolver__values[name] = value
+
+        return value
+
+
+class AsyncBuildStep(BuildStep):
+    async def resolve(self, declarations: DeclarationSet) -> None:  # type: ignore[override]
+        self.stub = AsyncResolver(
+            declarations=declarations,
+            step=self,
+            sequence=self.sequence,
+        )
+
+        for field_name in declarations:
+            self.attributes[field_name] = await self.stub.async_get(field_name)
+
+
+class AsyncStepBuilder(StepBuilder):
+    async def build(
+        self,
+        parent_step: Optional[AsyncBuildStep] = None,  # type: ignore[override]
+        force_sequence: Any = None,
+    ) -> Any:
+        """Build a factory instance."""
+        # This method is a copy-paste from the original StepBuilder.build method
+        # with the only difference that the AsyncBuildStep is used instead of BuildStep
+        # and the resolve method is awaited.
+
+        pre, post = parse_declarations(
+            self.extras,
+            base_pre=self.factory_meta.pre_declarations,
+            base_post=self.factory_meta.post_declarations,
+        )
+
+        if force_sequence is not None:
+            sequence = force_sequence
+        elif self.force_init_sequence is not None:
+            sequence = self.force_init_sequence
+        else:
+            sequence = self.factory_meta.next_sequence()
+
+        # The next line was changed:
+        step = AsyncBuildStep(
+            builder=self,
+            sequence=sequence,
+            parent_step=parent_step,
+        )
+        # The next line was changed:
+        await step.resolve(pre)
+
+        args, kwargs = self.factory_meta.prepare_arguments(step.attributes)
+
+        instance = self.factory_meta.instantiate(
+            step=step,
+            args=args,
+            kwargs=kwargs,
+        )
+
+        # The next two lines were added:
+        if inspect.isawaitable(instance):
+            instance = await instance
+
+        postgen_results = {}
+        for declaration_name in post.sorted():
+            declaration = post[declaration_name]
+            postgen_results[
+                declaration_name] = declaration.declaration.evaluate_post(
+                instance=instance,
+                step=step,
+                overrides=declaration.context,
+            )
+        self.factory_meta.use_postgeneration_results(
+            instance=instance,
+            step=step,
+            results=postgen_results,
+        )
+        return instance
 
 
 class AsyncSQLAlchemyFactory(Factory):
     _options_class = SQLAlchemyOptions
 
     @classmethod
-    def _generate(cls, strategy, params):
+    async def _generate(cls, strategy, params):
         # Original params are used in _get_or_create if it cannot build an
         # object initially due to an IntegrityError being raised
         cls._original_params = params
-        return super()._generate(strategy, params)
+
+        if cls._meta.abstract:
+            raise errors.FactoryError(
+                "Cannot generate instances of abstract factory {f}; "
+                "Ensure {f}.Meta.model is set and {f}.Meta.abstract "
+                "is either not set or False.".format(**dict(f=cls.__name__)),
+            )
+
+        step = AsyncStepBuilder(cls._meta, params, strategy)
+        return await step.build()
 
     @classmethod
     async def create(cls, **kwargs):
@@ -77,7 +174,11 @@ class AsyncSQLAlchemyFactory(Factory):
                 }
                 if get_or_create_params:
                     try:
-                        obj = (await session.execute(select(model_class).filter_by(**get_or_create_params))).scalars().one()
+                        obj = (
+                            await session
+                            .execute(select(model_class)
+                            .filter_by(**get_or_create_params))
+                        ).scalars().one()
                     except NoResultFound:
                         # Original params are not a valid lookup and triggered a create(),
                         # that resulted in an IntegrityError.

@@ -1,7 +1,6 @@
 import factory
 
 from async_factory_boy.factory.sqlalchemy import AsyncSQLAlchemyFactory
-
 from . import models
 from .conftest import sc_session
 
@@ -66,3 +65,25 @@ class WithMultipleGetOrCreateFieldsFactory(AsyncSQLAlchemyFactory):
     id = factory.Sequence(lambda n: n)
     slug = factory.Sequence(lambda n: "slug%s" % n)
     text = factory.Sequence(lambda n: "text%s" % n)
+
+
+class ParentModelFactory(AsyncSQLAlchemyFactory):
+    class Meta:
+        model = models.ParentModel
+        sqlalchemy_session = sc_session
+        sqlalchemy_session_persistence = "commit"
+
+    id = factory.Sequence(lambda n: n)
+    name = factory.Sequence(lambda n: "name%d" % n)
+
+
+class ChildModelWithSelfAttributeFactory(AsyncSQLAlchemyFactory):
+    class Meta:
+        model = models.ChildModel
+        sqlalchemy_session = sc_session
+        sqlalchemy_session_persistence = "commit"
+
+    id = factory.Sequence(lambda n: n)
+    name = factory.Sequence(lambda n: "name%d" % n)
+    parent = factory.SubFactory(ParentModelFactory)
+    parent_name = factory.SelfAttribute("parent.name")
